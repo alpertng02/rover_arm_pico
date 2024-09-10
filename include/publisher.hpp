@@ -15,13 +15,17 @@
 #include <rcl/publisher.h>
 #include <rcl/timer.h>
 #include <rover_drive_interfaces/msg/motor_feedback.h>
+#include <rover_arm_interfaces/msg/stepper_feedback.h>
 
 #include <etl/array.h>
 
 namespace ros {
 
-inline etl::array<rcl_publisher_t, 4> motorFeedbackPublishers{};
-inline etl::array<rover_drive_interfaces__msg__MotorFeedback, 4> motorFeedbackMsgs{};
+inline etl::array<rcl_publisher_t, 3> stepperFeedbackPublishers{};
+inline etl::array<rover_arm_interfaces__msg__StepperFeedback, 3> stepperFeedbackMsgs{};
+
+inline etl::array<rcl_publisher_t, 3> motorFeedbackPublishers{};
+inline etl::array<rover_drive_interfaces__msg__MotorFeedback, 3> motorFeedbackMsgs{};
 
 extern "C" void publisherTimerCallback(rcl_timer_t* timer, int64_t last_call_time);
 

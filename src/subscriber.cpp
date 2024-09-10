@@ -17,7 +17,7 @@
 
 namespace ros {
 
-void driveSubscriberCallback(const void* msgin, void* context) {
+void gripperSubscriberCallback(const void* msgin, void* context) {
     QueueHandle_t driveQueue = static_cast<QueueHandle_t>(context);
     if (msgin != NULL) {
         auto msg = static_cast<const rover_drive_interfaces__msg__MotorDrive*>(msgin);

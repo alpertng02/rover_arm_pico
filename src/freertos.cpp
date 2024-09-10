@@ -22,10 +22,10 @@ namespace freertos {
 
 void createMsgQueues() {
     // Create all the queues.
-    for (int i = 0; i < queue::publisherQueues.size(); i++) {
-        queue::publisherQueues[i] =
+    for (int i = 0; i < queue::gripperFeedbackQueues.size(); i++) {
+        queue::gripperFeedbackQueues[i] =
             xQueueCreate(1, sizeof(rover_drive_interfaces__msg__MotorFeedback));
-        queue::driveQueues[i] = xQueueCreate(1, sizeof(rover_drive_interfaces__msg__MotorDrive));
+        queue::gripperMotorQueues[i] = xQueueCreate(1, sizeof(rover_drive_interfaces__msg__MotorDrive));
     }
 }
 void createMicroRosTask() {

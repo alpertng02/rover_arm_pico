@@ -20,6 +20,7 @@ target_include_directories(micro_ros PUBLIC
 	${MICRO_ROS_PATH}/include/example_interfaces
 	${MICRO_ROS_PATH}/include/geometry_msgs
 	${MICRO_ROS_PATH}/include/rover_drive_interfaces
+	${MICRO_ROS_PATH}/include/rover_arm_interfaces
 	${MICRO_ROS_PATH}/include/lifecycle_msgs
 	${MICRO_ROS_PATH}/include/micro_ros_msgs
 	${MICRO_ROS_PATH}/include/nav_msgs

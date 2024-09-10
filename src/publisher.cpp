@@ -42,7 +42,7 @@ void publisherTimerCallback(rcl_timer_t* timer, int64_t last_call_time) {
     // Receive all the feedback messeages from the queues and publish them.
     rover_drive_interfaces__msg__MotorFeedback feedbackMsgBuffer{};
     for (int i = 0; i < motorFeedbackPublishers.size(); i++) {
-        if (xQueueReceive(freertos::queue::publisherQueues[i], &feedbackMsgBuffer, 0) == pdTRUE) {
+        if (xQueueReceive(freertos::queue::gripperFeedbackQueues[i], &feedbackMsgBuffer, 0) == pdTRUE) {
             ret += rcl_publish(&motorFeedbackPublishers[i], &feedbackMsgBuffer, NULL);
         }
     }

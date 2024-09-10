@@ -22,8 +22,10 @@ namespace freertos {
 
 namespace queue {
 
-inline etl::array<QueueHandle_t, 4> publisherQueues{};
-inline etl::array<QueueHandle_t, 4> driveQueues{};
+inline etl::array<QueueHandle_t, 3> gripperFeedbackQueues{};
+inline etl::array<QueueHandle_t, 3> stepperFeedbackQueues{};
+inline etl::array<QueueHandle_t, 3> gripperMotorQueues{};
+inline etl::array<QueueHandle_t, 3> armStepperQueues{};
 
 } // namespace queue
 } // namespace freertos

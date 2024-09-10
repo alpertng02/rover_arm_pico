@@ -15,14 +15,19 @@
 #include <rcl/subscription.h>
 #include <rclc/executor.h>
 #include <rover_drive_interfaces/msg/motor_drive.h>
+#include <rover_arm_interfaces/msg/arm_stepper.h>
 
 #include <etl/string_view.h>
 
 namespace ros {
 
-inline etl::array<rover_drive_interfaces__msg__MotorDrive, 4> driveMsgs{};
+inline etl::array<rover_arm_interfaces__msg__ArmStepper, 3> armStepperMsgs{};
+inline etl::array<rover_drive_interfaces__msg__MotorDrive, 3> gripperMsgs{};
 
-extern "C" void driveSubscriberCallback(const void* msgin, void* context);
+extern "C" void armStepperSubscriberCallback(const void* msgin, void* context);
+
+extern "C" void gripperSubscriberCallback(const void* msgin, void* context);
+
 
 class Subscriber {
 public:

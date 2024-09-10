@@ -40,7 +40,7 @@ void motorTask(void* arg) {
         // If there is a new drive messeage available, receive it and update the
         // lastMsgReceivedTime variable. Otherwise, don't wait for new data and
         // continue.
-        if (xQueueReceive(freertos::queue::driveQueues[i], &driveMsgReceived, 0) == pdTRUE) {
+        if (xQueueReceive(freertos::queue::gripperMotorQueues[i], &driveMsgReceived, 0) == pdTRUE) {
             lastMsgReceivedTime = get_absolute_time();
         }
 
@@ -78,7 +78,7 @@ void motorTask(void* arg) {
         feedbackMsgSent.dutycycle = etl::clamp(feedbackMsgSent.dutycycle,
             -ros::parameter::maxMotorDutyCycle,
             ros::parameter::maxMotorDutyCycle);
-    
+
         // Imaginary current value to test current limiting property since we do
         // not have a current sensor yet.
         feedbackMsgSent.current =
@@ -87,7 +87,7 @@ void motorTask(void* arg) {
         // Set the dutycyle of the motors.
         motor.setSpeed(feedbackMsgSent.dutycycle);
         // Send the feedback messeage to the queue
-        xQueueOverwrite(freertos::queue::publisherQueues[i], &feedbackMsgSent);
+        xQueueOverwrite(freertos::queue::gripperFeedbackQueues[i], &feedbackMsgSent);
         // Delay the task by the amount set in motor_pid_loop_period_ms parameter.
         xTaskDelayUntil(&startTick, pdMS_TO_TICKS(ros::parameter::motorPidLoopPeriodMs));
     }
@@ -105,20 +105,32 @@ void microRosTask(void* arg) {
     rclc_support_init(&support, 0, NULL, &allocator);
 
     rcl_node_t node = rcl_get_zero_initialized_node();
-    rclc_node_init_default(&node, "pico_node", "drive", &support);
+    rclc_node_init_default(&node, "pico_node", "arm", &support);
 
     // Create the MicroROS motor feedback publishers
     ros::createMotorFeedbackPublishers(&node);
 
-    // Create the MicroROS motor drive subscribers.
-    constexpr etl::array<etl::string_view, 4> subscriberNames{ "pico_subscriber_0",
-        "pico_subscriber_1", "pico_subscriber_2", "pico_subscriber_3" };
-    auto subscriberMsgType = ROSIDL_GET_MSG_TYPE_SUPPORT(rover_drive_interfaces, msg, MotorDrive);
-    etl::array<ros::Subscriber, 4> driveSubscribers{ ros::Subscriber(&node, subscriberNames[0],
-                                                         subscriberMsgType),
-        ros::Subscriber(&node, subscriberNames[1], subscriberMsgType),
-        ros::Subscriber(&node, subscriberNames[2], subscriberMsgType),
-        ros::Subscriber(&node, subscriberNames[3], subscriberMsgType) };
+    // Create the MicroROS gripper motor subscribers.
+    auto gripperMsgType = ROSIDL_GET_MSG_TYPE_SUPPORT(rover_drive_interfaces, msg, MotorDrive);
+    constexpr etl::array<etl::string_view, ros::gripperMsgs.size()> gripperSubscriberNames{
+        "gripper_subscriber_0", "gripper_subscriber_1", "gripper_subscriber_2"
+    };
+    etl::array<ros::Subscriber, 3> gripperSubscribers{
+        ros::Subscriber(&node, gripperSubscriberNames[0], gripperMsgType),
+        ros::Subscriber(&node, gripperSubscriberNames[1], gripperMsgType),
+        ros::Subscriber(&node, gripperSubscriberNames[2], gripperMsgType)
+    };
+
+    // Create the MicroROS arm stepper subscribers.
+    auto armStepperMsgType = ROSIDL_GET_MSG_TYPE_SUPPORT(rover_drive_interfaces, msg, MotorDrive);
+    constexpr etl::array<etl::string_view, ros::armStepperMsgs.size()> armStepperSubscriberNames{
+        "arm_gripper_subscriber_0", "arm_gripper_subscriber_1", "arm_gripper_subscriber_2"
+    };
+    etl::array<ros::Subscriber, 3> armStepperSubscribers{
+        ros::Subscriber(&node, armStepperSubscriberNames[0], armStepperMsgType),
+        ros::Subscriber(&node, armStepperSubscriberNames[1], armStepperMsgType),
+        ros::Subscriber(&node, armStepperSubscriberNames[2], armStepperMsgType)
+    };
 
     // Create MicroROS timer that will publish the feedback messeages
     // We use a MicroROS task for publishing instead of publishing directly in
@@ -133,9 +145,11 @@ void microRosTask(void* arg) {
     rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
     rclc_executor_init(&executor, &support.context, 5, &allocator);
     // Add the subscribers and the timer to the executor.
-    for (int i = 0; i < driveSubscribers.size(); i++) {
-        driveSubscribers[i].addToExecutor(&executor, &ros::driveMsgs[i],
-            ros::driveSubscriberCallback, queue::driveQueues[i], ON_NEW_DATA);
+    for (int i = 0; i < gripperSubscribers.size(); i++) {
+        gripperSubscribers[i].addToExecutor(&executor, &ros::gripperMsgs[i],
+            ros::gripperSubscriberCallback, queue::gripperMotorQueues[i], ON_NEW_DATA);
+        armStepperSubscribers[i].addToExecutor(&executor, &ros::armStepperMsgs[i],
+            ros::armStepperSubscriberCallback, queue::armStepperQueues[i], ON_NEW_DATA);
     }
     rclc_executor_add_timer(&executor, &publisherTimer);
 
