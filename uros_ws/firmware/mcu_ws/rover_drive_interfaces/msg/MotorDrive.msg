@@ -1,0 +1,2 @@
+int32 target_rpm
+float32 rotation_rads

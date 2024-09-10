@@ -1,0 +1,13 @@
+build
+.vscode
+.cache
+uros_ws/log
+uros_ws/install
+uros_ws/.vscode
+uros_ws/src/uros
+uros_ws/build
+uros_ws/firmware/mcu_ws/install
+uros_ws/firmware/mcu_ws/uros
+uros_ws/firmware/mcu_ws/log
+uros_ws/firmware/dev_ws
+

@@ -1,0 +1,19 @@
+[submodule "uros_ws/src/micro_ros_setup"]
+	path = uros_ws/src/micro_ros_setup
+	url = https://github.com/micro-ROS/micro_ros_setup.git
+	branch = humble
+[submodule "lib/FreeRTOS-Kernel"]
+	path = lib/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git
+[submodule "uros_ws/firmware/mcu_ws/rover_drive_interfaces"]
+	path = uros_ws/firmware/mcu_ws/rover_drive_interfaces
+	url = https://github.com/cengaverrover/rover_drive_interfaces.git
+[submodule "lib/etlcpp"]
+	path = lib/etlcpp
+	url = https://github.com/ETLCPP/etl.git
+[submodule "lib/motor_drivers"]
+	path = lib/motor_drivers
+	url = https://github.com/alpertng02/pico_motor_drivers.git
+[submodule "lib/pico_encoder_substep"]
+	path = lib/pico_encoder_substep
+	url = https://github.com/alpertng02/pico-encoder-cpp.git

@@ -1,0 +1,20 @@
+# Format Style Options - Created with Clang Power Tools
+---
+BasedOnStyle: WebKit
+AlignOperands: Align
+AllowShortIfStatementsOnASingleLine: WithoutElse
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: BeforeColon
+ColumnLimit: 100
+ExperimentalAutoDetectBinPacking: true
+IncludeBlocks: Merge
+IndentCaseLabels: true
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: None
+ReflowComments: false
+SortIncludes: false
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyBlock: false
+TabWidth: 4
+...
