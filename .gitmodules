@@ -17,3 +17,6 @@
 [submodule "uros_ws/firmware/mcu_ws/rover_arm_interfaces"]
 	path = uros_ws/firmware/mcu_ws/rover_arm_interfaces
 	url = https://github.com/cengaverrover/rover_arm_interfaces.git
+[submodule "lib/pico_stepper"]
+	path = lib/pico_stepper
+	url = https://github.com/alpertng02/pico_stepper.git

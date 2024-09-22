@@ -31,6 +31,7 @@ add_subdirectory(lib/etlcpp)
 #include libs
 add_subdirectory(lib/motor_drivers/lib)
 add_subdirectory(lib/pico_encoder_substep/lib)
+add_subdirectory(lib/pico_stepper/lib)
 
 #Add main source directory
 add_subdirectory(src)

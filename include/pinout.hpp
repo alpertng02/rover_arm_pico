@@ -21,13 +21,16 @@ inline constexpr uint led = 25;
 inline constexpr uint i2cSda = 0;
 inline constexpr uint i2cScl = 1;
 
-inline constexpr etl::array<uint, 4> motorPwmL{ 2, 6, 4, 8 };
-inline constexpr etl::array<uint, 4> motorPwmR{ 3, 7, 5, 9 };
+inline constexpr etl::array<uint, 3> gripperMotorPwmL{};
+inline constexpr etl::array<uint, 3> gripperMotorPwmR{};
 
-inline const PIO encoderPio = pio0;
-inline constexpr etl::array<uint, 4> encoderA{ 10, 14, 12, 20 };
-inline constexpr etl::array<uint, 4> encoderB{ 11, 15, 13, 21 };
-inline constexpr etl::array<uint, 4> encoderPioSm{ 0, 1, 2, 3 };
+inline constexpr etl::array<uint, 3> armStepperPul{};
+inline constexpr etl::array<uint, 3> armStepperDir{};
+
+// inline const PIO encoderPio = pio0;
+// inline constexpr etl::array<uint, 4> encoderA{ 10, 14, 12, 20 };
+// inline constexpr etl::array<uint, 4> encoderB{ 11, 15, 13, 21 };
+// inline constexpr etl::array<uint, 4> encoderPioSm{ 0, 1, 2, 3 };
 } // namespace pinout
 
 #endif // PINS_HPP

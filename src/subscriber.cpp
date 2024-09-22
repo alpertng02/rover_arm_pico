@@ -18,11 +18,21 @@
 namespace ros {
 
 void gripperSubscriberCallback(const void* msgin, void* context) {
-    QueueHandle_t driveQueue = static_cast<QueueHandle_t>(context);
-    if (msgin != NULL) {
-        auto msg = static_cast<const rover_drive_interfaces__msg__MotorDrive*>(msgin);
-        xQueueOverwrite(driveQueue, msg);
+    if (context == nullptr || msgin == nullptr) {
+        return;
     }
+    auto driveQueue = static_cast<QueueHandle_t>(context);
+    auto msg = static_cast<const rover_drive_interfaces__msg__MotorDrive*>(msgin);
+    xQueueOverwrite(driveQueue, msg);
+}
+
+void armStepperSubscriberCallback(const void* msgin, void* context) {
+    if (context == nullptr || msgin == nullptr) {
+        return;
+    }
+    auto armStepperQueue = static_cast<QueueHandle_t>(context);
+    auto msg = static_cast<const rover_arm_interfaces__msg__ArmStepper*>(msgin);
+    xQueueOverwrite(armStepperQueue, msg);
 }
 
 Subscriber::Subscriber(

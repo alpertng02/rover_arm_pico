@@ -17,6 +17,7 @@ target_link_libraries(${NAME}
     etl::etl
     pico_BTS7960
     pico_encoder_substep_class
+    pico-stepper
 )
 	
 target_include_directories(${NAME} PRIVATE

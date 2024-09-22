@@ -6,7 +6,7 @@
 #include "subscriber.hpp"
 
 #include "BTS7960.hpp"
-#include "encoder_substep.hpp"
+#include "stepper.hpp"
 #include "pinout.hpp"
 
 #include <hardware/watchdog.h>
@@ -21,12 +21,10 @@ void motorTask(void* arg) {
     const size_t i = (size_t)(arg);
 
     // Create the motor and encoder classes.
-    motor::BTS7960 motor(pinout::motorPwmL[i], pinout::motorPwmR[i]);
-    encoder::EncoderSubstep encoder(
-        pinout::encoderPio, pinout::encoderPioSm[i], pinout::encoderA[i]);
+    motor::BTS7960 motor(pinout::gripperMotorPwmL[i], pinout::gripperMotorPwmR[i]);
 
     // Create the ros messeages.
-    rover_drive_interfaces__msg__MotorDrive driveMsgReceived{};
+    rover_drive_interfaces__msg__MotorDrive gripperMsgReceived{};
     rover_drive_interfaces__msg__MotorFeedback feedbackMsgSent{};
 
     // Integral and previous error to use for PID.
@@ -40,12 +38,11 @@ void motorTask(void* arg) {
         // If there is a new drive messeage available, receive it and update the
         // lastMsgReceivedTime variable. Otherwise, don't wait for new data and
         // continue.
-        if (xQueueReceive(freertos::queue::gripperMotorQueues[i], &driveMsgReceived, 0) == pdTRUE) {
+        if (xQueueReceive(freertos::queue::gripperMotorQueues[i], &gripperMsgReceived, 0) ==
+            pdTRUE) {
             lastMsgReceivedTime = get_absolute_time();
         }
 
-        // Read the current RPM from encoders.
-        feedbackMsgSent.encoder_rpm = encoder.getRpm();
         // Calculate the time since the last messeage was received.
         auto timeDiffMsg = absolute_time_diff_us(lastMsgReceivedTime, get_absolute_time()) / 1000;
 
@@ -53,27 +50,13 @@ void motorTask(void* arg) {
         // reached, set the target RPM to 0 to turn the motors off.
         if (feedbackMsgSent.current >= ros::parameter::maxMotorCurrent ||
             timeDiffMsg >= ros::parameter::motorTimeoutMs) {
-            driveMsgReceived.target_rpm = 0;
+            gripperMsgReceived.target_rpm = 0;
         }
-        // If PID mode is open calculate the PID values.
-        if (ros::parameter::motorPidMode) {
-            const int32_t errorRpm = driveMsgReceived.target_rpm - feedbackMsgSent.encoder_rpm;
-
-            const float proportional = errorRpm * ros::parameter::motorPidKd;
-            integral += errorRpm * ros::parameter::motorPidKi;
-            integral = etl::clamp(
-                integral, -ros::parameter::maxMotorDutyCycle, ros::parameter::maxMotorDutyCycle);
-            const float derivative = ros::parameter::motorPidKd * (errorRpm - errorRpmPrev) *
-                                     ros::parameter::motorPidLoopPeriodMs / 1000.0f;
-
-            feedbackMsgSent.dutycycle = proportional + integral + derivative;
-        } else {
-            // If PID mode is off, assume there is a linear relationship between the
-            // motor dutycyle and RPM and use open loop control.
-            feedbackMsgSent.dutycycle = driveMsgReceived.target_rpm *
-                                        ros::parameter::maxMotorDutyCycleUpperConstraint /
-                                        ros::parameter::maxMotorRpm;
-        }
+        // If PID mode is off, assume there is a linear relationship between the
+        // motor dutycyle and RPM and use open loop control.
+        feedbackMsgSent.dutycycle = gripperMsgReceived.target_rpm *
+                                    ros::parameter::maxMotorDutyCycleUpperConstraint /
+                                    ros::parameter::maxMotorRpm;
         // Clamp the dutycycle within the boundaries.
         feedbackMsgSent.dutycycle = etl::clamp(feedbackMsgSent.dutycycle,
             -ros::parameter::maxMotorDutyCycle,
@@ -90,6 +73,32 @@ void motorTask(void* arg) {
         xQueueOverwrite(freertos::queue::gripperFeedbackQueues[i], &feedbackMsgSent);
         // Delay the task by the amount set in motor_pid_loop_period_ms parameter.
         xTaskDelayUntil(&startTick, pdMS_TO_TICKS(ros::parameter::motorPidLoopPeriodMs));
+    }
+}
+
+void stepperTask(void* arg) {
+    if (arg == nullptr) {
+        vTaskDelete(nullptr);
+    }
+    const size_t i = (size_t)arg;
+    Stepper stepper(pinout::armStepperPul[i], pinout::armStepperDir[i]);
+
+    rover_arm_interfaces__msg__ArmStepper armStepperMsgReceived{};
+    rover_arm_interfaces__msg__StepperFeedback stepperFeedbackSent{};
+
+    while (true) {
+        if (xQueueReceive(queue::armStepperQueues[i],
+                &armStepperMsgReceived,
+                ros::parameter::motorTimeoutMs) != pdTRUE) {
+            stepper.enable(false);
+        } else {
+            stepper.startMotion(static_cast<int32_t>(armStepperMsgReceived.target_pos_steps),
+                armStepperMsgReceived.speed_steps_sec * 5, 50, true);
+        }
+
+        stepperFeedbackSent.pos_steps = stepper.getPos();
+        stepperFeedbackSent.speed_steps_sec = stepper.getActualSpeed();
+        xQueueOverwrite(queue::stepperFeedbackQueues[i], &stepperFeedbackSent);
     }
 }
 
