@@ -63,11 +63,17 @@ void stepperTask(void* arg) {
         vTaskDelete(nullptr);
     }
     const size_t i = (size_t)arg;
-    Stepper stepper(pinout::armStepperPul[i], pinout::armStepperDir[i]);
+
+    uint32_t speedControlPeriodMs = ros::parameter::stepperSpeedControlPeriodMs[i];
+    uint32_t stepsPerRev = ros::parameter::stepperStepsPerRev[i];
+
+    Stepper stepper(pinout::armStepperPul[i], pinout::armStepperDir[i],
+        stepsPerRev,speedControlPeriodMs);
 
     rover_arm_interfaces__msg__ArmStepper armStepperMsgReceived{};
     rover_arm_interfaces__msg__StepperFeedback stepperFeedbackSent{};
 
+    
     while (true) {
         if (xQueueReceive(queue::armStepperQueues[i],
                 &armStepperMsgReceived,
@@ -76,6 +82,15 @@ void stepperTask(void* arg) {
         } else {
             stepper.startMotion(static_cast<int32_t>(armStepperMsgReceived.target_pos_steps),
                 ros::parameter::stepperMaxAccel[i], 500, true);
+        }
+
+        if (speedControlPeriodMs != ros::parameter::stepperSpeedControlPeriodMs[i]) {
+            speedControlPeriodMs = ros::parameter::stepperSpeedControlPeriodMs[i];
+            stepper.setTimerPeriod(speedControlPeriodMs);
+        }
+        if (stepsPerRev != ros::parameter::stepperStepsPerRev[i]) {
+            stepsPerRev = ros::parameter::stepperStepsPerRev[i];
+            stepper.setStepsPerRev(stepsPerRev);
         }
 
         stepperFeedbackSent.pos_steps = stepper.getPos();
@@ -172,7 +187,8 @@ void microRosTask(void* arg) {
         watchdog_update();
         // Delay the tasks to free the core for other tasks.
         // TODO add parameter to control executor period.
-        vTaskDelay(pdMS_TO_TICKS(ros::parameter::feedbackPeriodMs > 50 ? 50 : ros::parameter::feedbackPeriodMs));
+        vTaskDelay(pdMS_TO_TICKS(
+            ros::parameter::feedbackPeriodMs > 50 ? 50 : ros::parameter::feedbackPeriodMs));
     }
 }
 } // namespace task
