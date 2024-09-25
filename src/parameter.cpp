@@ -11,6 +11,7 @@
 
 #include "parameters.hpp"
 #include <etl/string_view.h>
+#include <etl/unordered_map.h>
 
 namespace ros {
 
@@ -25,26 +26,54 @@ constexpr static rclc_parameter_type_t maxMotorDutyCycleType = RCLC_PARAMETER_DO
 constexpr static etl::string_view maxMotorCurrentName{ "max_motor_current" };
 constexpr static rclc_parameter_type_t maxMotorCurrentType = RCLC_PARAMETER_DOUBLE;
 
-constexpr static etl::string_view motorPidLoopPeriodMsName{ "motor_pid_loop_period_ms" };
-constexpr static rclc_parameter_type_t motorPidLoopPeriodMsType = RCLC_PARAMETER_INT;
-
 constexpr static etl::string_view motorTimeoutMsName{ "motor_timeout_ms" };
 constexpr static rclc_parameter_type_t motorTimeoutMsType = RCLC_PARAMETER_INT;
 
-constexpr static etl::string_view motorFeedbackPeriodMsName{ "motor_feedback_period_ms" };
-constexpr static rclc_parameter_type_t motorFeedbackPeriodMsType = RCLC_PARAMETER_INT;
+constexpr static etl::string_view stepperTimeoutMsName{ "stepper_timeout_ms" };
+constexpr static rclc_parameter_type_t stepperTimeoutMsType = RCLC_PARAMETER_INT;
 
-constexpr static etl::string_view motorPidModeName{ "motor_pid_mode" };
-constexpr static rclc_parameter_type_t motorPidModeType = RCLC_PARAMETER_BOOL;
+constexpr static etl::string_view feedbackPeriodMsName{ "feedback_period_ms" };
+constexpr static rclc_parameter_type_t feedbackPeriodMsType = RCLC_PARAMETER_INT;
 
-constexpr static etl::string_view motorPidKpName{ "motor_pid_kp" };
-constexpr static rclc_parameter_type_t motorPidKpType = RCLC_PARAMETER_DOUBLE;
+constexpr static etl::array<etl::string_view, 3> stepperGearRatiosNames{ "stepper_gear_ratio_0",
+    "stepper_gear_ratio_1", "stepper_gear_ratio_2" };
+constexpr static rclc_parameter_type_t stepperGearRatiosType = RCLC_PARAMETER_INT;
 
-constexpr static etl::string_view motorPidKiName{ "motor_pid_ki" };
-constexpr static rclc_parameter_type_t motorPidKiType = RCLC_PARAMETER_DOUBLE;
+constexpr static etl::array<etl::string_view, 3> stepperStepsPerRevNames{ "stepper_steps_per_rev_0",
+    "stepper_steps_per_rev_1", "stepper_steps_per_rev_2" };
+constexpr static rclc_parameter_type_t stepperStepsPerRevType = RCLC_PARAMETER_INT;
 
-constexpr static etl::string_view motorPidKdName{ "motor_pid_kd" };
-constexpr static rclc_parameter_type_t motorPidKdType = RCLC_PARAMETER_DOUBLE;
+constexpr static etl::array<etl::string_view, 3> stepperSpeedControlPeriodMsNames{
+    "stepper_speed_control_period_ms_0", "stepper_speed_control_period_ms_1",
+    "stepper_speed_control_period_ms_2"
+};
+constexpr static rclc_parameter_type_t stepperSpeedControlPeriodMsType = RCLC_PARAMETER_INT;
+
+constexpr static etl::array<etl::string_view, 3> stepperMaxAccelNames{ "stepper_max_accel_0",
+    "stepper_max_accel_1", "stepper_max_accels_2" };
+constexpr static rclc_parameter_type_t stepperMaxAccelType = RCLC_PARAMETER_INT;
+
+
+static etl::unordered_map<etl::string_view, void*, 18> parameterMap{
+    {maxMotorRpmName,                      &maxMotorRpm                   },
+    { maxMotorDutyCycleName,               &maxMotorDutyCycle             },
+    { maxMotorCurrentName,                 &maxMotorCurrent               },
+    { motorTimeoutMsName,                  &motorTimeoutMs                },
+    { stepperTimeoutMsName,                &stepperTimeoutMs              },
+    { feedbackPeriodMsName,                &feedbackPeriodMs              },
+    { stepperGearRatiosNames[0],           &stepperGearRatios[0]          },
+    { stepperGearRatiosNames[1],           &stepperGearRatios[1]          },
+    { stepperGearRatiosNames[2],           &stepperGearRatios[2]          },
+    { stepperStepsPerRevNames[0],          &stepperStepsPerRev[0]         },
+    { stepperStepsPerRevNames[1],          &stepperStepsPerRev[1]         },
+    { stepperStepsPerRevNames[2],          &stepperStepsPerRev[2]         },
+    { stepperSpeedControlPeriodMsNames[0], &stepperSpeedControlPeriodMs[0]},
+    { stepperSpeedControlPeriodMsNames[1], &stepperSpeedControlPeriodMs[1]},
+    { stepperSpeedControlPeriodMsNames[2], &stepperSpeedControlPeriodMs[2]},
+    { stepperMaxAccelNames[0],             &stepperMaxAccel[0]            },
+    { stepperMaxAccelNames[1],             &stepperMaxAccel[1]            },
+    { stepperMaxAccelNames[2],             &stepperMaxAccel[2]            },
+};
 
 extern "C" bool onParameterChange(
     const Parameter* oldParam, const Parameter* newParam, void* context);
@@ -80,31 +109,40 @@ rcl_ret_t Server::initParameters() {
         maxMotorDutyCycleLowerConstraint, maxMotorDutyCycleUpperConstraint, 0);
 
     ret += rclc_add_parameter(&paramServer_, maxMotorCurrentName.data(), maxMotorCurrentType);
-    ret += rclc_add_parameter(
-        &paramServer_, motorPidLoopPeriodMsName.data(), motorPidLoopPeriodMsType);
     ret += rclc_add_parameter(&paramServer_, motorTimeoutMsName.data(), motorTimeoutMsType);
-    ret += rclc_add_parameter(
-        &paramServer_, motorFeedbackPeriodMsName.data(), motorFeedbackPeriodMsType);
-    ret += rclc_add_parameter(&paramServer_, motorPidModeName.data(), motorPidModeType);
+    ret += rclc_add_parameter(&paramServer_, stepperTimeoutMsName.data(), stepperTimeoutMsType);
+    ret += rclc_add_parameter(&paramServer_, feedbackPeriodMsName.data(), feedbackPeriodMsType);
 
-    ret += rclc_add_parameter(&paramServer_, motorPidKpName.data(), motorPidKpType);
-    ret += rclc_add_parameter(&paramServer_, motorPidKdName.data(), motorPidKiType);
-    ret += rclc_add_parameter(&paramServer_, motorPidKiName.data(), motorPidKdType);
+    for (int i = 0; i < stepperGearRatios.size(); i++) {
+        ret += rclc_add_parameter(
+            &paramServer_, stepperGearRatiosNames[i].data(), stepperGearRatiosType);
+        ret += rclc_add_parameter(
+            &paramServer_, stepperStepsPerRevNames[i].data(), stepperStepsPerRevType);
+        ret += rclc_add_parameter(&paramServer_, stepperSpeedControlPeriodMsNames[i].data(),
+            stepperSpeedControlPeriodMsType);
+        ret +=
+            rclc_add_parameter(&paramServer_, stepperMaxAccelNames[i].data(), stepperMaxAccelType);
+    }
 
     // Set the values of the parameters in &paramServer_.
     ret += rclc_parameter_set_int(&paramServer_, maxMotorRpmName.data(), maxMotorRpm);
     ret +=
         rclc_parameter_set_double(&paramServer_, maxMotorDutyCycleName.data(), maxMotorDutyCycle);
     ret += rclc_parameter_set_double(&paramServer_, maxMotorCurrentName.data(), maxMotorCurrent);
-    ret += rclc_parameter_set_int(
-        &paramServer_, motorPidLoopPeriodMsName.data(), motorPidLoopPeriodMs);
     ret += rclc_parameter_set_int(&paramServer_, motorTimeoutMsName.data(), motorTimeoutMs);
-    ret += rclc_parameter_set_int(
-        &paramServer_, motorFeedbackPeriodMsName.data(), motorFeedbackPeriodMs);
-    ret += rclc_parameter_set_bool(&paramServer_, motorPidModeName.data(), motorPidMode);
-    ret += rclc_parameter_set_double(&paramServer_, motorPidKpName.data(), motorPidKp);
-    ret += rclc_parameter_set_double(&paramServer_, motorPidKiName.data(), motorPidKi);
-    ret += rclc_parameter_set_double(&paramServer_, motorPidKdName.data(), motorPidKd);
+    ret += rclc_parameter_set_int(&paramServer_, stepperTimeoutMsName.data(), stepperTimeoutMs);
+    ret += rclc_parameter_set_int(&paramServer_, feedbackPeriodMsName.data(), feedbackPeriodMs);
+
+    for (int i = 0; i < stepperGearRatios.size(); i++) {
+        ret += rclc_parameter_set_int(
+            &paramServer_, stepperGearRatiosNames[i].data(), stepperGearRatios[i]);
+        ret += rclc_parameter_set_int(
+            &paramServer_, stepperStepsPerRevNames[i].data(), stepperStepsPerRev[i]);
+        ret += rclc_parameter_set_int(&paramServer_, stepperSpeedControlPeriodMsNames[i].data(),
+            stepperSpeedControlPeriodMs[i]);
+        ret += rclc_parameter_set_int(
+            &paramServer_, stepperMaxAccelNames[i].data(), stepperMaxAccel[i]);
+    }
     return ret;
 }
 
@@ -114,48 +152,22 @@ bool onParameterChange(const Parameter* oldParam, const Parameter* newParam, voi
         return false;
     }
 
-    // TODO convert this to a hashmap
-    switch (newParam->value.type) {
-        case RCLC_PARAMETER_INT:
-            if (maxMotorRpmName == newParam->name.data) {
-                maxMotorRpm = newParam->value.integer_value;
-            } else if (motorPidLoopPeriodMsName == newParam->name.data) {
-                motorPidLoopPeriodMs = newParam->value.integer_value;
-            } else if (motorFeedbackPeriodMsName == newParam->name.data) {
-                motorFeedbackPeriodMs = newParam->value.integer_value;
-            } else if (motorTimeoutMsName == newParam->name.data) {
-                motorTimeoutMs = newParam->value.integer_value;
-            } else {
-                return false;
-            }
-            break;
-        case RCLC_PARAMETER_DOUBLE:
-            if (maxMotorDutyCycleName == newParam->name.data) {
-                maxMotorDutyCycle = newParam->value.double_value;
-            } else if (maxMotorCurrentName == newParam->name.data) {
-                maxMotorCurrent = newParam->value.double_value;
-            } else if (motorPidKpName == newParam->name.data) {
-                motorPidKp = newParam->value.double_value;
-            } else if (motorPidKiName == newParam->name.data) {
-                motorPidKi = newParam->value.double_value;
-            } else if (motorPidKdName == newParam->name.data) {
-                motorPidKd = newParam->value.double_value;
-            } else {
-                return false;
-            }
-            break;
-        case RCLC_PARAMETER_BOOL:
-            if (motorPidModeName == newParam->name.data) {
-                motorPidMode = newParam->value.bool_value;
-            } else {
-                return false;
-            }
-            break;
-        default:
-            return false;
+    void* res = parameterMap[newParam->name.data];
+    if (res != nullptr) {
+        switch (newParam->value.type) {
+            case RCLC_PARAMETER_INT:
+                *static_cast<int32_t*>(res) = newParam->value.integer_value;
+                break;
+            case RCLC_PARAMETER_DOUBLE:
+                *static_cast<float*>(res) = newParam->value.double_value;
+                break;
+            case RCLC_PARAMETER_BOOL:
+                *static_cast<bool*>(res) = newParam->value.bool_value;
+                break;
+        }
+        return true;
     }
-
-    return true;
+    return false;
 }
 
 } // namespace parameter

@@ -17,4 +17,5 @@ SortIncludes: false
 SpaceBeforeCpp11BracedList: false
 SpaceInEmptyBlock: false
 TabWidth: 4
+AlignArrayOfStructures: Left
 ...

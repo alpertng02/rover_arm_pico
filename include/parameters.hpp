@@ -14,6 +14,7 @@
 
 #include <pico/types.h>
 #include <rclc_parameter/rclc_parameter.h>
+#include <etl/array.h>
 
 namespace ros {
 
@@ -33,7 +34,7 @@ private:
     rclc_parameter_server_t paramServer_{};
 };
 
-inline int32_t maxMotorRpm = 20000;
+inline int32_t maxMotorRpm = 100;
 
 inline float maxMotorDutyCycle = 100.0f;
 constexpr inline float maxMotorDutyCycleUpperConstraint = 100.0f;
@@ -41,19 +42,20 @@ constexpr inline float maxMotorDutyCycleLowerConstraint = 0.0f;
 
 inline float maxMotorCurrent = 50.0f;
 
-inline int32_t motorPidLoopPeriodMs = 20;
-
 inline int32_t motorTimeoutMs = 1000;
+inline int32_t stepperTimeoutMs = 1000;
 
-inline int32_t motorFeedbackPeriodMs = 100;
+inline int32_t feedbackPeriodMs = 100;
 
-inline bool motorPidMode = false;
+inline etl::array<float, 3> stepperGearRatios{ 50.0f, 68.18181818f, 2.0f };
+inline etl::array<int32_t, 3> stepperStepsPerRev{ 400, 400, 2000 };
+inline etl::array<int32_t, 3> stepperSpeedControlPeriodMs{ 2, 2, 2 };
 
-inline float motorPidKp = maxMotorRpm / maxMotorDutyCycle;
-
-inline float motorPidKi = motorPidKp / 10.0f;
-
-inline float motorPidKd = motorPidKp / 20.0f;
+inline etl::array<int32_t, 3> stepperMaxAccel {
+    stepperStepsPerRev[0] * stepperStepsPerRev[0] / 2,
+    stepperStepsPerRev[1] * stepperStepsPerRev[1] / 2,
+    stepperStepsPerRev[2] * stepperStepsPerRev[2] / 2
+};
 
 
 } // namespace parameter

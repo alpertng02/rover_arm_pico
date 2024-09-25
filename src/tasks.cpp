@@ -35,44 +35,26 @@ void motorTask(void* arg) {
     // Get the starting time of the task.
     TickType_t startTick{ xTaskGetTickCount() };
     while (true) {
-        // If there is a new drive messeage available, receive it and update the
-        // lastMsgReceivedTime variable. Otherwise, don't wait for new data and
-        // continue.
-        if (xQueueReceive(freertos::queue::gripperMotorQueues[i], &gripperMsgReceived, 0) ==
-            pdTRUE) {
-            lastMsgReceivedTime = get_absolute_time();
+        if (xQueueReceive(freertos::queue::gripperMotorQueues[i],
+                &gripperMsgReceived,
+                ros::parameter::motorTimeoutMs) != pdTRUE) {
+            feedbackMsgSent.dutycycle = 0;
+        } else {
+            // Assume there is a linear relationship between the
+            // motor dutycyle and RPM and use open loop control.
+            feedbackMsgSent.dutycycle = gripperMsgReceived.target_rpm *
+                                        ros::parameter::maxMotorDutyCycleUpperConstraint /
+                                        ros::parameter::maxMotorRpm;
         }
-
-        // Calculate the time since the last messeage was received.
-        auto timeDiffMsg = absolute_time_diff_us(lastMsgReceivedTime, get_absolute_time()) / 1000;
-
-        // If the motor current is over the maximum value or the timeout has been
-        // reached, set the target RPM to 0 to turn the motors off.
-        if (feedbackMsgSent.current >= ros::parameter::maxMotorCurrent ||
-            timeDiffMsg >= ros::parameter::motorTimeoutMs) {
-            gripperMsgReceived.target_rpm = 0;
-        }
-        // If PID mode is off, assume there is a linear relationship between the
-        // motor dutycyle and RPM and use open loop control.
-        feedbackMsgSent.dutycycle = gripperMsgReceived.target_rpm *
-                                    ros::parameter::maxMotorDutyCycleUpperConstraint /
-                                    ros::parameter::maxMotorRpm;
         // Clamp the dutycycle within the boundaries.
         feedbackMsgSent.dutycycle = etl::clamp(feedbackMsgSent.dutycycle,
             -ros::parameter::maxMotorDutyCycle,
             ros::parameter::maxMotorDutyCycle);
 
-        // Imaginary current value to test current limiting property since we do
-        // not have a current sensor yet.
-        feedbackMsgSent.current =
-            (feedbackMsgSent.dutycycle) * (ros::parameter::maxMotorCurrent - 5.0f) / 100.0f;
-
         // Set the dutycyle of the motors.
         motor.setSpeed(feedbackMsgSent.dutycycle);
         // Send the feedback messeage to the queue
         xQueueOverwrite(freertos::queue::gripperFeedbackQueues[i], &feedbackMsgSent);
-        // Delay the task by the amount set in motor_pid_loop_period_ms parameter.
-        xTaskDelayUntil(&startTick, pdMS_TO_TICKS(ros::parameter::motorPidLoopPeriodMs));
     }
 }
 
@@ -89,11 +71,11 @@ void stepperTask(void* arg) {
     while (true) {
         if (xQueueReceive(queue::armStepperQueues[i],
                 &armStepperMsgReceived,
-                ros::parameter::motorTimeoutMs) != pdTRUE) {
+                ros::parameter::stepperTimeoutMs) != pdTRUE) {
             stepper.enable(false);
         } else {
             stepper.startMotion(static_cast<int32_t>(armStepperMsgReceived.target_pos_steps),
-                armStepperMsgReceived.speed_steps_sec * 5, 50, true);
+                ros::parameter::stepperMaxAccel[i], 500, true);
         }
 
         stepperFeedbackSent.pos_steps = stepper.getPos();
@@ -148,7 +130,7 @@ void microRosTask(void* arg) {
     rcl_timer_t publisherTimer = rcl_get_zero_initialized_timer();
     publisherTimer = rcl_get_zero_initialized_timer();
     rclc_timer_init_default(&publisherTimer, &support,
-        RCL_MS_TO_NS(ros::parameter::motorFeedbackPeriodMs), ros::publisherTimerCallback);
+        RCL_MS_TO_NS(ros::parameter::feedbackPeriodMs), ros::publisherTimerCallback);
 
     // Create the executor responsible for all the subscribers and the timer.
     rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
@@ -179,7 +161,7 @@ void microRosTask(void* arg) {
     xTaskResumeAll();
     // Set the watchdog timer that will reset microcontroller if it is not updated
     // within set time period.
-    watchdog_enable(ros::parameter::motorFeedbackPeriodMs * 10, true);
+    watchdog_enable(ros::parameter::feedbackPeriodMs * 10, true);
     while (true) {
         // Spin the executors to check if there are new subscriber messeages or
         // parameter server requests.
@@ -190,7 +172,7 @@ void microRosTask(void* arg) {
         watchdog_update();
         // Delay the tasks to free the core for other tasks.
         // TODO add parameter to control executor period.
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(ros::parameter::feedbackPeriodMs > 50 ? 50 : ros::parameter::feedbackPeriodMs));
     }
 }
 } // namespace task

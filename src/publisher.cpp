@@ -35,9 +35,9 @@ void publisherTimerCallback(rcl_timer_t* timer, int64_t last_call_time) {
     // timer.
     int64_t lastPeriod{};
     rcl_ret_t ret = rcl_timer_get_period(timer, &lastPeriod);
-    if (lastPeriod != RCL_MS_TO_NS(parameter::motorFeedbackPeriodMs)) {
+    if (lastPeriod != RCL_MS_TO_NS(parameter::feedbackPeriodMs)) {
         ret += rcl_timer_exchange_period(
-            timer, RCL_MS_TO_NS(parameter::motorFeedbackPeriodMs), &lastPeriod);
+            timer, RCL_MS_TO_NS(parameter::feedbackPeriodMs), &lastPeriod);
     }
     // Receive all the feedback messeages from the queues and publish them.
     rover_drive_interfaces__msg__MotorFeedback feedbackMsgBuffer{};
