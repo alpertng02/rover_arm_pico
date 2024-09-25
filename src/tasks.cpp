@@ -163,7 +163,7 @@ void microRosTask(void* arg) {
     // server.
     // We need the second executor since we have more handles than the maximum
     // executor handle.
-    ros::parameter::Server paramServer(&node, true, 10, true, false);
+    ros::parameter::Server paramServer(&node, true, 18, true, false);
     rclc_executor_t paramServerExecutor = rclc_executor_get_zero_initialized_executor();
     rclc_executor_init(
         &paramServerExecutor, &support.context, RCLC_EXECUTOR_PARAMETER_SERVER_HANDLES, &allocator);
