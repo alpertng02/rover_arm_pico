@@ -21,9 +21,6 @@
 
 namespace ros {
 
-inline etl::array<rover_arm_interfaces__msg__ArmStepper, 3> armStepperMsgs{};
-inline etl::array<rover_drive_interfaces__msg__MotorDrive, 3> gripperMsgs{};
-
 extern "C" void armStepperSubscriberCallback(const void* msgin, void* context);
 
 extern "C" void gripperSubscriberCallback(const void* msgin, void* context);
@@ -40,6 +37,10 @@ public:
 private:
     rcl_subscription_t subscriber_{};
 };
+
+etl::array<Subscriber, 3> createGripperSubscribers(rcl_node_t * node);
+etl::array<Subscriber, 3> createStepperSubscribers(rcl_node_t * node);
+
 } // namespace ros
 
 #endif // SUBSCRIBER_HPP

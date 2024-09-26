@@ -14,23 +14,31 @@
 
 #include <rcl/publisher.h>
 #include <rcl/timer.h>
-#include <rover_drive_interfaces/msg/motor_feedback.h>
-#include <rover_arm_interfaces/msg/stepper_feedback.h>
 
-#include <etl/array.h>
-
+#include <etl/string_view.h>
 namespace ros {
 
-inline etl::array<rcl_publisher_t, 3> stepperFeedbackPublishers{};
-inline etl::array<rover_arm_interfaces__msg__StepperFeedback, 3> stepperFeedbackMsgs{};
+class Publisher {
+public:
+    Publisher() = default;
 
-inline etl::array<rcl_publisher_t, 3> motorFeedbackPublishers{};
-inline etl::array<rover_drive_interfaces__msg__MotorFeedback, 3> motorFeedbackMsgs{};
+    Publisher(
+        rcl_node_t* node, etl::string_view name, const rosidl_message_type_support_t* typeSupport);
+
+    rcl_ret_t init(
+        rcl_node_t* node, etl::string_view name, const rosidl_message_type_support_t* typeSupport);
+
+    rcl_ret_t publish(const void* msg, rmw_publisher_allocation_t* allocation = nullptr);
+
+private:
+    rcl_publisher_t publisher_{ rcl_get_zero_initialized_publisher() };
+};
+
 
 extern "C" void publisherTimerCallback(rcl_timer_t* timer, int64_t last_call_time);
 
 rcl_ret_t createMotorFeedbackPublishers(rcl_node_t* node);
-
+rcl_ret_t createStepperFeedbackPublishers(rcl_node_t* node);
 } // namespace ros
 
 #endif // PUBLISHER_HPP

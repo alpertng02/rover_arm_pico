@@ -18,41 +18,23 @@ namespace ros {
 namespace parameter {
 
 constexpr static etl::string_view maxMotorRpmName{ "max_motor_rpm" };
-constexpr static rclc_parameter_type_t maxMotorRpmType = RCLC_PARAMETER_INT;
-
 constexpr static etl::string_view maxMotorDutyCycleName{ "max_motor_dutycycle" };
-constexpr static rclc_parameter_type_t maxMotorDutyCycleType = RCLC_PARAMETER_DOUBLE;
-
 constexpr static etl::string_view maxMotorCurrentName{ "max_motor_current" };
-constexpr static rclc_parameter_type_t maxMotorCurrentType = RCLC_PARAMETER_DOUBLE;
-
 constexpr static etl::string_view motorTimeoutMsName{ "motor_timeout_ms" };
-constexpr static rclc_parameter_type_t motorTimeoutMsType = RCLC_PARAMETER_INT;
-
 constexpr static etl::string_view stepperTimeoutMsName{ "stepper_timeout_ms" };
-constexpr static rclc_parameter_type_t stepperTimeoutMsType = RCLC_PARAMETER_INT;
-
 constexpr static etl::string_view feedbackPeriodMsName{ "feedback_period_ms" };
-constexpr static rclc_parameter_type_t feedbackPeriodMsType = RCLC_PARAMETER_INT;
 
 constexpr static etl::array<etl::string_view, 3> stepperGearRatiosNames{ "stepper_gear_ratio_0",
     "stepper_gear_ratio_1", "stepper_gear_ratio_2" };
-constexpr static rclc_parameter_type_t stepperGearRatiosType = RCLC_PARAMETER_INT;
-
 constexpr static etl::array<etl::string_view, 3> stepperStepsPerRevNames{ "stepper_steps_per_rev_0",
     "stepper_steps_per_rev_1", "stepper_steps_per_rev_2" };
-constexpr static rclc_parameter_type_t stepperStepsPerRevType = RCLC_PARAMETER_INT;
 
 constexpr static etl::array<etl::string_view, 3> stepperSpeedControlPeriodMsNames{
     "stepper_speed_control_period_ms_0", "stepper_speed_control_period_ms_1",
     "stepper_speed_control_period_ms_2"
 };
-constexpr static rclc_parameter_type_t stepperSpeedControlPeriodMsType = RCLC_PARAMETER_INT;
-
 constexpr static etl::array<etl::string_view, 3> stepperMaxAccelNames{ "stepper_max_accel_0",
     "stepper_max_accel_1", "stepper_max_accels_2" };
-constexpr static rclc_parameter_type_t stepperMaxAccelType = RCLC_PARAMETER_INT;
-
 
 static etl::unordered_map<etl::string_view, void*, 18> parameterMap{
     {maxMotorRpmName,                      &maxMotorRpm                   },
@@ -96,52 +78,78 @@ Server::Server(rcl_node_t* node, bool notify_changed_over_dds, uint32_t max_para
 }
 
 rcl_ret_t Server::addToExecutor(rclc_executor_t* executor) {
-    return rclc_executor_add_parameter_server_with_context(
+    rcl_ret_t ret = rclc_executor_add_parameter_server_with_context(
         executor, &paramServer_, onParameterChange, this);
+    ret += initParameters();
+    return ret;
+}
+
+rcl_ret_t Server::addParameter(etl::string_view paramName, rclc_parameter_type_t paramType) {
+    return rclc_add_parameter(&paramServer_, paramName.data(), paramType);
+}
+
+rcl_ret_t Server::addParameter(etl::string_view paramName, int32_t value) {
+    rcl_ret_t ret = addParameter(paramName, RCLC_PARAMETER_INT);
+    ret += setParameter(paramName, value);
+    return ret;
+}
+
+rcl_ret_t Server::addParameter(etl::string_view paramName, float value) {
+    rcl_ret_t ret = addParameter(paramName, RCLC_PARAMETER_DOUBLE);
+    ret += setParameter(paramName, value);
+    return ret;
+}
+
+rcl_ret_t Server::addParameter(etl::string_view paramName, bool value) {
+    rcl_ret_t ret = addParameter(paramName, RCLC_PARAMETER_BOOL);
+    ret += setParameter(paramName, value);
+    return ret;
+}
+
+
+rcl_ret_t Server::addParameterConstraint(
+    etl::string_view paramName, int32_t lower, int32_t upper, int32_t step) {
+    return rclc_add_parameter_constraint_integer(
+        &paramServer_, paramName.data(), lower, upper, step);
+}
+
+rcl_ret_t Server::addParameterConstraint(
+    etl::string_view paramName, float lower, float upper, float step) {
+    return rclc_add_parameter_constraint_double(
+        &paramServer_, paramName.data(), lower, upper, step);
+}
+
+
+rcl_ret_t Server::setParameter(etl::string_view paramName, int32_t paramValue) {
+    return rclc_parameter_set_int(&paramServer_, paramName.data(), paramValue);
+}
+
+rcl_ret_t Server::setParameter(etl::string_view paramName, float paramValue) {
+    return rclc_parameter_set_double(&paramServer_, paramName.data(), paramValue);
+}
+
+rcl_ret_t Server::setParameter(etl::string_view paramName, bool paramValue) {
+    return rclc_parameter_set_bool(&paramServer_, paramName.data(), paramValue);
 }
 
 rcl_ret_t Server::initParameters() {
     rcl_ret_t ret = 0;
     // Add parameters to the server.
-    ret += rclc_add_parameter(&paramServer_, maxMotorRpmName.data(), maxMotorRpmType);
-    ret += rclc_add_parameter(&paramServer_, maxMotorDutyCycleName.data(), maxMotorDutyCycleType);
-    ret += rclc_add_parameter_constraint_double(&paramServer_, maxMotorDutyCycleName.data(),
-        maxMotorDutyCycleLowerConstraint, maxMotorDutyCycleUpperConstraint, 0);
+    ret += addParameter(maxMotorRpmName, maxMotorRpm);
+    ret += addParameter(maxMotorDutyCycleName, maxMotorDutyCycle);
+    ret += addParameterConstraint(maxMotorDutyCycleName, maxMotorDutyCycleLowerConstraint,
+        maxMotorDutyCycleUpperConstraint, 0.0f);
 
-    ret += rclc_add_parameter(&paramServer_, maxMotorCurrentName.data(), maxMotorCurrentType);
-    ret += rclc_add_parameter(&paramServer_, motorTimeoutMsName.data(), motorTimeoutMsType);
-    ret += rclc_add_parameter(&paramServer_, stepperTimeoutMsName.data(), stepperTimeoutMsType);
-    ret += rclc_add_parameter(&paramServer_, feedbackPeriodMsName.data(), feedbackPeriodMsType);
-
-    for (int i = 0; i < stepperGearRatios.size(); i++) {
-        ret += rclc_add_parameter(
-            &paramServer_, stepperGearRatiosNames[i].data(), stepperGearRatiosType);
-        ret += rclc_add_parameter(
-            &paramServer_, stepperStepsPerRevNames[i].data(), stepperStepsPerRevType);
-        ret += rclc_add_parameter(&paramServer_, stepperSpeedControlPeriodMsNames[i].data(),
-            stepperSpeedControlPeriodMsType);
-        ret +=
-            rclc_add_parameter(&paramServer_, stepperMaxAccelNames[i].data(), stepperMaxAccelType);
-    }
-
-    // Set the values of the parameters in &paramServer_.
-    ret += rclc_parameter_set_int(&paramServer_, maxMotorRpmName.data(), maxMotorRpm);
-    ret +=
-        rclc_parameter_set_double(&paramServer_, maxMotorDutyCycleName.data(), maxMotorDutyCycle);
-    ret += rclc_parameter_set_double(&paramServer_, maxMotorCurrentName.data(), maxMotorCurrent);
-    ret += rclc_parameter_set_int(&paramServer_, motorTimeoutMsName.data(), motorTimeoutMs);
-    ret += rclc_parameter_set_int(&paramServer_, stepperTimeoutMsName.data(), stepperTimeoutMs);
-    ret += rclc_parameter_set_int(&paramServer_, feedbackPeriodMsName.data(), feedbackPeriodMs);
+    ret += addParameter(maxMotorCurrentName, maxMotorCurrent);
+    ret += addParameter(motorTimeoutMsName, motorTimeoutMs);
+    ret += addParameter(stepperTimeoutMsName, stepperTimeoutMs);
+    ret += addParameter(feedbackPeriodMsName, feedbackPeriodMs);
 
     for (int i = 0; i < stepperGearRatios.size(); i++) {
-        ret += rclc_parameter_set_int(
-            &paramServer_, stepperGearRatiosNames[i].data(), stepperGearRatios[i]);
-        ret += rclc_parameter_set_int(
-            &paramServer_, stepperStepsPerRevNames[i].data(), stepperStepsPerRev[i]);
-        ret += rclc_parameter_set_int(&paramServer_, stepperSpeedControlPeriodMsNames[i].data(),
-            stepperSpeedControlPeriodMs[i]);
-        ret += rclc_parameter_set_int(
-            &paramServer_, stepperMaxAccelNames[i].data(), stepperMaxAccel[i]);
+        ret += addParameter(stepperGearRatiosNames[i], stepperGearRatios[i]);
+        ret += addParameter(stepperStepsPerRevNames[i], stepperStepsPerRev[i]);
+        ret += addParameter(stepperSpeedControlPeriodMsNames[i], stepperSpeedControlPeriodMs[i]);
+        ret += addParameter(stepperMaxAccelNames[i], stepperMaxAccel[i]);
     }
     return ret;
 }

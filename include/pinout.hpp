@@ -24,8 +24,8 @@ inline constexpr uint i2cScl = 1;
 inline constexpr etl::array<uint, 3> gripperMotorPwmL{};
 inline constexpr etl::array<uint, 3> gripperMotorPwmR{};
 
-inline constexpr etl::array<uint, 3> armStepperPul{};
-inline constexpr etl::array<uint, 3> armStepperDir{};
+inline constexpr etl::array<uint, 3> armStepperPul{ 2, 6, 8 };
+inline constexpr etl::array<uint, 3> armStepperDir{ 3, 7, 9 };
 
 // inline const PIO encoderPio = pio0;
 // inline constexpr etl::array<uint, 4> encoderA{ 10, 14, 12, 20 };

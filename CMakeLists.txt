@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 # Set the name of the program
-set(NAME rover_drive_pico) 
+set(NAME rover_arm_pico) 
 
 set(FREERTOS_KERNEL_PATH ${CMAKE_SOURCE_DIR}/lib/FreeRTOS-Kernel)
 

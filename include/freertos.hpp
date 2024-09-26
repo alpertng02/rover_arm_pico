@@ -4,7 +4,8 @@
 namespace freertos {
 
 void createMicroRosTask();
-void createMotorTasks();
+void createGripperMotorTasks();
+void createStepperMotorTasks();
 void createMsgQueues();
 
 } // namespace freertos

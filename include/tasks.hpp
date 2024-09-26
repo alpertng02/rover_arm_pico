@@ -23,8 +23,11 @@ namespace task {
 inline TaskHandle_t microRosTaskHandle = nullptr;
 extern "C" void microRosTask(void* arg);
 
-inline etl::array<TaskHandle_t, 4> motorTaskHandles{};
-extern "C" void motorTask(void* arg);
+inline etl::array<TaskHandle_t, 3> gripperMotorTaskHandles{};
+extern "C" void gripperMotorTask(void* arg);
+
+inline etl::array<TaskHandle_t, 3> stepperMotorTaskHandles{};
+extern "C" void stepperMotorTask(void* arg);
 
 } // namespace task
 } // namespace freertos
