@@ -65,9 +65,12 @@ template <uint i> void stepperMotorTask(void* arg) {
 
     Stepper stepper(
         pinout::armStepperPul[i], pinout::armStepperDir[i], stepsPerRev, speedControlPeriodMs);
-    
+
     rover_arm_interfaces__msg__ArmStepper armStepperMsgReceived{};
     rover_arm_interfaces__msg__StepperFeedback stepperFeedbackSent{};
+
+    xQueueReceive(queue::armStepperQueues[i], &armStepperMsgReceived, portMAX_DELAY);
+    stepper.setPos(armStepperMsgReceived.target_pos_steps);
 
     while (true) {
         if (xQueueReceive(queue::armStepperQueues[i],
@@ -77,7 +80,9 @@ template <uint i> void stepperMotorTask(void* arg) {
         } else {
             // stepper.startMotion(armStepperMsgReceived.target_pos_steps,
             //     ros::parameter::stepperMaxAccel[i], 1000, true);
+            stepper.setTargetPos(armStepperMsgReceived.speed_steps_sec);
             stepper.setSpeed(armStepperMsgReceived.speed_steps_sec);
+            stepper.enable(true);
         }
 
         if (speedControlPeriodMs != ros::parameter::stepperSpeedControlPeriodMs[i]) {
