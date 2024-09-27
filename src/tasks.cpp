@@ -45,12 +45,12 @@ template <uint i> void gripperMotorTask(void* arg) {
             // motor dutycyle and RPM and use open loop control.
             feedbackMsgSent.dutycycle = gripperMsgReceived.target_rpm *
                                         ros::parameter::maxMotorDutyCycleUpperConstraint /
-                                        ros::parameter::maxMotorRpm;
+                                        ros::parameter::gripperMotorMaxRpm;
         }
         // Clamp the dutycycle within the boundaries.
         feedbackMsgSent.dutycycle = etl::clamp(feedbackMsgSent.dutycycle,
-            -ros::parameter::maxMotorDutyCycle,
-            ros::parameter::maxMotorDutyCycle);
+            -ros::parameter::gripperMotorMaxDutyCycle,
+            ros::parameter::gripperMotorMaxDutyCycle);
 
         // Set the dutycyle of the motors.
         motor.setSpeed(feedbackMsgSent.dutycycle);
@@ -184,7 +184,10 @@ void microRosTask(void* arg) {
 
         // Delay the tasks to free the core for other tasks.
         // TODO add parameter to control executor period.
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(
+            pdMS_TO_TICKS(ros::parameter::executorSpinPeriodMs > ros::parameter::feedbackPeriodMs
+                              ? ros::parameter::feedbackPeriodMs
+                              : ros::parameter::executorSpinPeriodMs));
     }
 }
 } // namespace task

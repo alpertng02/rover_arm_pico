@@ -17,10 +17,11 @@ namespace ros {
 
 namespace parameter {
 
-constexpr static etl::string_view maxMotorRpmName{ "max_motor_rpm" };
-constexpr static etl::string_view maxMotorDutyCycleName{ "max_motor_dutycycle" };
-constexpr static etl::string_view maxMotorCurrentName{ "max_motor_current" };
+constexpr static etl::string_view gripperMotorMaxRpmName{ "gripper_motor_max_rpm" };
+constexpr static etl::string_view gripperMotorMaxDutyCycleName{ "gripper_motor_max_dutycycle" };
+constexpr static etl::string_view gripperMotorMaxCurrentName{ "gripper_motor_max_current" };
 constexpr static etl::string_view motorTimeoutMsName{ "motor_timeout_ms" };
+constexpr static etl::string_view executorSpinPeriodMsName{ "exector_spin_period_ms" };
 constexpr static etl::string_view stepperTimeoutMsName{ "stepper_timeout_ms" };
 constexpr static etl::string_view feedbackPeriodMsName{ "feedback_period_ms" };
 
@@ -36,13 +37,14 @@ constexpr static etl::array<etl::string_view, 3> stepperSpeedControlPeriodMsName
 constexpr static etl::array<etl::string_view, 3> stepperMaxAccelNames{ "stepper_max_accel_0",
     "stepper_max_accel_1", "stepper_max_accels_2" };
 
-static etl::unordered_map<etl::string_view, void*, 18> parameterMap{
-    {maxMotorRpmName,                      &maxMotorRpm                   },
-    { maxMotorDutyCycleName,               &maxMotorDutyCycle             },
-    { maxMotorCurrentName,                 &maxMotorCurrent               },
+static etl::unordered_map<etl::string_view, void*, 19> parameterMap{
+    {gripperMotorMaxRpmName,               &gripperMotorMaxRpm            },
+    { gripperMotorMaxDutyCycleName,        &gripperMotorMaxDutyCycle      },
+    { gripperMotorMaxCurrentName,          &gripperMotorMaxCurrent        },
     { motorTimeoutMsName,                  &motorTimeoutMs                },
     { stepperTimeoutMsName,                &stepperTimeoutMs              },
     { feedbackPeriodMsName,                &feedbackPeriodMs              },
+    { executorSpinPeriodMsName,            &executorSpinPeriodMs          },
     { stepperGearRatiosNames[0],           &stepperGearRatios[0]          },
     { stepperGearRatiosNames[1],           &stepperGearRatios[1]          },
     { stepperGearRatiosNames[2],           &stepperGearRatios[2]          },
@@ -135,12 +137,12 @@ rcl_ret_t Server::setParameter(etl::string_view paramName, bool paramValue) {
 rcl_ret_t Server::initParameters() {
     rcl_ret_t ret = 0;
     // Add parameters to the server.
-    ret += addParameter(maxMotorRpmName, maxMotorRpm);
-    ret += addParameter(maxMotorDutyCycleName, maxMotorDutyCycle);
-    ret += addParameterConstraint(maxMotorDutyCycleName, maxMotorDutyCycleLowerConstraint,
+    ret += addParameter(gripperMotorMaxRpmName, gripperMotorMaxRpm);
+    ret += addParameter(gripperMotorMaxDutyCycleName, gripperMotorMaxDutyCycle);
+    ret += addParameterConstraint(gripperMotorMaxDutyCycleName, maxMotorDutyCycleLowerConstraint,
         maxMotorDutyCycleUpperConstraint, 0.0f);
 
-    ret += addParameter(maxMotorCurrentName, maxMotorCurrent);
+    ret += addParameter(gripperMotorMaxCurrentName, gripperMotorMaxCurrent);
     ret += addParameter(motorTimeoutMsName, motorTimeoutMs);
     ret += addParameter(stepperTimeoutMsName, stepperTimeoutMs);
     ret += addParameter(feedbackPeriodMsName, feedbackPeriodMs);

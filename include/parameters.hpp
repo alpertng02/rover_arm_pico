@@ -50,18 +50,22 @@ private:
     rcl_ret_t initParameters();
 };
 
-inline int32_t maxMotorRpm = 100;
+inline constexpr int paramCount = 19;
 
-inline float maxMotorDutyCycle = 100.0f;
+inline int32_t gripperMotorMaxRpm = 100;
+
+inline float gripperMotorMaxDutyCycle = 100.0f;
 constexpr inline float maxMotorDutyCycleUpperConstraint = 100.0f;
 constexpr inline float maxMotorDutyCycleLowerConstraint = 0.0f;
 
-inline float maxMotorCurrent = 50.0f;
+inline float gripperMotorMaxCurrent = 50.0f;
 
 inline int32_t motorTimeoutMs = 1000;
 inline int32_t stepperTimeoutMs = 1000;
 
 inline int32_t feedbackPeriodMs = 100;
+
+inline int32_t executorSpinPeriodMs = 50;
 
 inline etl::array<float, 3> stepperGearRatios{ 50.0f, 68.18181818f, 2.0f };
 inline etl::array<int32_t, 3> stepperStepsPerRev{ 400, 400, 2000 };
