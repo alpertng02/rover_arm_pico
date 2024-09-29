@@ -38,7 +38,7 @@ void armStepperSubscriberCallback(const void* msgin, void* context) {
 Subscriber::Subscriber(
     rcl_node_t* node, etl::string_view name, const rosidl_message_type_support_t* type)
     : subscriber_(rcl_get_zero_initialized_subscription()) {
-    rclc_subscription_init_best_effort(&subscriber_, node, type, name.data());
+    rclc_subscription_init_default(&subscriber_, node, type, name.data());
 }
 
 rcl_ret_t Subscriber::addToExecutor(rclc_executor_t* executor, void* msg,

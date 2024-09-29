@@ -80,22 +80,20 @@ template <uint i> void stepperMotorTask(void* arg) {
         } else {
             // stepper.startMotion(armStepperMsgReceived.target_pos_steps,
             //     ros::parameter::stepperMaxAccel[i], 1000, true);
-            stepper.setTargetPos(armStepperMsgReceived.speed_steps_sec);
-            stepper.setSpeed(armStepperMsgReceived.speed_steps_sec);
-            stepper.enable(true);
+            stepper.setTargetPos(armStepperMsgReceived.target_pos_steps);
+            if (armStepperMsgReceived.speed_steps_sec > 0) {
+                stepper.setDir(true);
+                stepper.enable(true);
+            } else if (armStepperMsgReceived.speed_steps_sec < 0) {
+                stepper.setDir(false);
+                stepper.enable(true);
+            }
+            stepper.setSpeedFp(labs(armStepperMsgReceived.speed_steps_sec) * 1000);
         }
 
-        if (speedControlPeriodMs != ros::parameter::stepperSpeedControlPeriodMs[i]) {
-            speedControlPeriodMs = ros::parameter::stepperSpeedControlPeriodMs[i];
-            stepper.setTimerPeriod(speedControlPeriodMs);
-        }
-        if (stepsPerRev != ros::parameter::stepperStepsPerRev[i]) {
-            stepsPerRev = ros::parameter::stepperStepsPerRev[i];
-            stepper.setStepsPerRev(stepsPerRev);
-        }
         stepperFeedbackSent.pos_steps = stepper.getPos();
         // stepperFeedbackSent.pos_steps = armStepperMsgReceived.target_pos_steps;
-        stepperFeedbackSent.speed_steps_sec = stepper.getActualSpeed();
+        stepperFeedbackSent.speed_steps_sec = stepper.getActualSpeed() * stepper.getDir() ? 1 : -1;
 
         xQueueOverwrite(queue::stepperFeedbackQueues[i], &stepperFeedbackSent);
     }
@@ -176,9 +174,9 @@ void microRosTask(void* arg) {
     while (true) {
         // Spin the executors to check if there are new subscriber messeages or
         // parameter server requests.
-        const auto gripperExecutorResult = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
+        const auto gripperExecutorResult = rclc_executor_spin_some(&executor, RCL_MS_TO_NS(0));
         const auto paramExecutorResult =
-            rclc_executor_spin_some(&paramServerExecutor, RCL_MS_TO_NS(1));
+            rclc_executor_spin_some(&paramServerExecutor, RCL_MS_TO_NS(0));
         // Update the watchdog
         watchdog_update();
 
@@ -230,7 +228,7 @@ void createStepperMotorTasks() {
 
     constexpr uint32_t stepperTaskStack = 512;
     constexpr uint32_t stepperTaskPriority = configMAX_PRIORITIES - 3;
-    constexpr std::array<uint32_t, 3> stepperTaskCoreAffinity = { 0x03, 0x03, 0x03 };
+    constexpr std::array<uint32_t, 3> stepperTaskCoreAffinity = { 0x02, 0x02, 0x02 };
     constexpr std::array stepperMotorTasks{ task::stepperMotorTask<0>, task::stepperMotorTask<1>,
         task::stepperMotorTask<2> };
 

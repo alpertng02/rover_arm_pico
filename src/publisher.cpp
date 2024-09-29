@@ -31,7 +31,7 @@ Publisher::Publisher(
 
 rcl_ret_t Publisher::init(
     rcl_node_t* node, etl::string_view name, const rosidl_message_type_support_t* typeSupport) {
-    return rclc_publisher_init_best_effort(&publisher_, node, typeSupport, name.data());
+    return rclc_publisher_init_default(&publisher_, node, typeSupport, name.data());
 }
 
 
